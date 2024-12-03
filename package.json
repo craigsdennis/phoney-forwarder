@@ -12,8 +12,16 @@
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.5.2",
     "@cloudflare/workers-types": "^4.20241127.0",
+    "@types/google-libphonenumber": "^7.4.30",
     "typescript": "^5.5.2",
     "vitest": "2.0.5",
     "wrangler": "^3.60.3"
+  },
+  "dependencies": {
+    "google-libphonenumber": "^3.2.39",
+    "hono": "^4.6.12",
+    "openai": "^4.74.0",
+    "twilio": "^5.3.6",
+    "zod": "^3.23.8"
   }
 }

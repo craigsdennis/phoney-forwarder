@@ -10,6 +10,9 @@ compatibility_flags = ["nodejs_compat"]
 [observability]
 enabled = true
 
+[assets]
+directory = "./public"
+
 # Automatically place your workloads in an optimal location to minimize latency.
 # If you are running back-end logic in a Worker, running it closer to your back-end infrastructure
 # rather than the end user may result in better performance.
@@ -42,10 +45,10 @@ enabled = true
 
 # Bind a D1 database. D1 is Cloudflare’s native serverless SQL database.
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#d1-databases
-# [[d1_databases]]
-# binding = "MY_DB"
-# database_name = "my-database"
-# database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+[[d1_databases]]
+binding = "DB"
+database_name = "phoney-forwarder"
+database_id = "510beff9-3db2-4ebf-9112-087d07aa7fe4"
 
 # Bind a dispatch namespace. Use Workers for Platforms to deploy serverless functions programmatically on behalf of your customers.
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#dispatch-namespace-bindings-workers-for-platforms
@@ -112,3 +115,8 @@ enabled = true
 # [[vectorize]]
 # binding = "MY_INDEX"
 # index_name = "my-index"
+
+[[workflows]]
+name = "forwarder"
+binding = "FORWARDER"
+class_name = "ForwarderWorkflow"

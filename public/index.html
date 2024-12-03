@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Submission Tester</title>
+    <style>
+        body {
+            background-color: #1e1e1e;
+            color: #c5c6c7;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding-top: 20px;
+        }
+        #container {
+            width: 80%;
+            max-width: 600px;
+            padding: 20px;
+            background-color: #282c34;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            background-color: #1e1e1e;
+            color: #c5c6c7;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            margin-top: 20px;
+            background-color: #61dafb;
+            border: none;
+            color: #1e1e1e;
+            font-weight: bold;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #21a1f1;
+        }
+        table {
+            width: 80%;
+            max-width: 600px;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #282c34;
+            color: #c5c6c7;
+        }
+        table, th, td {
+            border: 1px solid #555;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #3a3f47;
+        }
+        .delete-button {
+            background-color: transparent;
+            border: none;
+            color: #ff6b6b;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .delete-button:hover {
+            color: #ff4c4c;
+        }
+    </style>
+</head>
+<body>
+    <p>Set your incoming voice call to: https://<span id="host"></span>/incoming</p>
+    <div id="container">
+        <h2>Test JSON Submission</h2>
+        <textarea id="jsonInput">{
+   "content": "My favorite restaurant is Five Guys",
+   "defaultLocation": "New York City"
+}</textarea>
+        <button id="testButton">Test</button>
+        <button id="refreshButton">Refresh List</button>
+    </div>
+    <table id="resultsTable">
+        <thead>
+            <tr>
+                <th>Phone Number</th>
+                <th>Title</th>
+                <th>Original Request</th>
+            </tr>
+        </thead>
+        <tbody id="resultsBody">
+        </tbody>
+    </table>
+   <h2>All mappings</h2>
+    <table id="mappingsTable">
+        <thead>
+            <tr>
+                <th>Caller Phone Number</th>
+                <th>Forwarded Phone Number</th>
+                <th>Twilio Phone Number</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="mappingsBody">
+        </tbody>
+    </table>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            fetchResults();
+            fetchMappings();
+            setHost();
+        });
+
+        document.getElementById('testButton').addEventListener('click', function () {
+            const textareaValue = document.getElementById('jsonInput').value;
+            let jsonData;
+
+            try {
+                jsonData = JSON.parse(textareaValue);
+            } catch (error) {
+                alert('Invalid JSON! Please correct it and try again.');
+                return;
+            }
+
+            fetch('/api/forwards', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(jsonData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                alert('JSON submitted successfully!');
+                fetchResults();
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('An error occurred while submitting JSON.');
+            });
+        });
+
+        document.getElementById('refreshButton').addEventListener('click', function () {
+            fetchResults();
+            fetchMappings();
+        });
+
+        function fetchResults() {
+            fetch('/api/forwards')
+                .then(response => response.json())
+                .then(data => {
+                    const results = data.results;
+                    const resultsBody = document.getElementById('resultsBody');
+                    resultsBody.innerHTML = '';
+                    results.forEach(result => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${result.phone_number}</td>
+                            <td>${result.title}</td>
+                            <td>${result.original_request}</td>
+                        `;
+                        resultsBody.appendChild(row);
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    alert('An error occurred while fetching results.');
+                });
+        }
+
+        function fetchMappings() {
+            fetch('/api/mappings')
+                .then(response => response.json())
+                .then(data => {
+                    const mappings = data.results;
+                    const mappingsBody = document.getElementById('mappingsBody');
+                    mappingsBody.innerHTML = '';
+                    mappings.forEach(mapping => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${mapping.caller_phone_number}</td>
+                            <td>${mapping.forwarded_phone_number}</td>
+                            <td>${mapping.incoming_phone_number}</td>
+                            <td><button class="delete-button" onclick="deleteMapping('${mapping.id}')">🗑️</button></td>
+                        `;
+                        mappingsBody.appendChild(row);
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    alert('An error occurred while fetching mappings.');
+                });
+        }
+
+        function deleteMapping(id) {
+            fetch(`/api/mappings/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Mapping deleted successfully!');
+                    fetchMappings();
+                } else {
+                    alert('Failed to delete mapping.');
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('An error occurred while deleting the mapping.');
+            });
+        }
+
+        function setHost() {
+            const host = window.location.host;
+            document.getElementById('host').textContent = host;
+        }
+    </script>
+</body>
+</html>
