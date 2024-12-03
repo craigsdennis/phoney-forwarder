@@ -80,7 +80,8 @@
     </style>
 </head>
 <body>
-    <p>Set your incoming voice call to: https://<span id="host"></span>/incoming</p>
+    <p>Set your incoming voice call to: https://<span class="host"></span>/incoming</p>
+    <p>Make a POST with the following JSON to: https://<span class="host"></span>/api/forwards</p>
     <div id="container">
         <h2>Test JSON Submission</h2>
         <textarea id="jsonInput">{
@@ -90,7 +91,6 @@
         <button id="testButton">Test</button>
         <button id="refreshButton">Refresh List</button>
     </div>
-	<h2>Last 5 forwards</h2>
     <table id="resultsTable">
         <thead>
             <tr>
@@ -224,7 +224,10 @@
 
         function setHost() {
             const host = window.location.host;
-            document.getElementById('host').textContent = host;
+            const hostElements = document.getElementsByClassName('host');
+            for (let i = 0; i < hostElements.length; i++) {
+                hostElements[i].textContent = host;
+            }
         }
     </script>
 </body>
