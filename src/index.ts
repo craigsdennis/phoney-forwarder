@@ -67,7 +67,6 @@ export class ForwarderWorkflow extends WorkflowEntrypoint<Env, ForwarderParams> 
 			};
 		});
 		const status = await step.do('Update database', async () => {
-			// TODO: e164 it?
 			const result = await this.env.DB.prepare('INSERT INTO forwards (phone_number, title, original_request) VALUES (?, ?, ?);')
 				.bind(restaurantInfo.phoneNumber, restaurantInfo.title, content)
 				.all();

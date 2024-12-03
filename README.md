@@ -22,7 +22,7 @@ Apply the DB migrations
 npx wrangler d1 migrations apply phoney-forwarder --remote
 ```
 
-Push up a Google API Key that has access to
+Push up a Google API Key that has access to the [Places API](https://developers.google.com/maps/documentation/places/web-service/overview).
 
 ```bash
 npx wrangler secret put GOOGLE_API_KEY
