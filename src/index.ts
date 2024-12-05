@@ -10,6 +10,12 @@ import { workersUrl } from 'twilio/lib/jwt/taskrouter/util';
 
 const app = new Hono<{ Bindings: Env }>();
 
+function e164ize(phoneNumber: string) {
+	const phoneUtil = PhoneNumberUtil.getInstance();
+	const number = phoneUtil.parseAndKeepRawInput(phoneNumber, 'US');
+	return phoneUtil.format(number, PhoneNumberFormat.E164);
+}
+
 type ForwarderParams = {
 	content: string;
 	defaultLocation: string;
@@ -43,8 +49,7 @@ export class ForwarderWorkflow extends WorkflowEntrypoint<Env, ForwarderParams> 
 			return { success: false };
 		}
 		const restaurantInfo = await step.do('Lookup Restaurant Details', async () => {
-			const phoneUtil = PhoneNumberUtil.getInstance();
-			const textQuery = `${content} near ${extractedData.location}`;
+			const textQuery = `${extractedData.name} near ${extractedData.location}`;
 			const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
 				method: 'POST',
 				headers: {
@@ -60,10 +65,9 @@ export class ForwarderWorkflow extends WorkflowEntrypoint<Env, ForwarderParams> 
 			const results = await response.json();
 			const place = results.places[0];
 			console.log({ place });
-			const number = phoneUtil.parseAndKeepRawInput(place.nationalPhoneNumber, 'US');
 			return {
 				title: place.displayName.text,
-				phoneNumber: phoneUtil.format(number, PhoneNumberFormat.E164),
+				phoneNumber: e164ize(place.nationalPhoneNumber),
 			};
 		});
 		const status = await step.do('Update database', async () => {
@@ -78,6 +82,17 @@ export class ForwarderWorkflow extends WorkflowEntrypoint<Env, ForwarderParams> 
 		return status;
 	}
 }
+
+app.post('/api/forwards/manual', async(c) => {
+	const payload = await c.req.json();
+	const content = payload.content ?? "Manually set";
+	const number = payload.number;
+	const phoneNumber = e164ize(number);
+	const result = await c.env.DB.prepare('INSERT INTO forwards (phone_number, title, original_request) VALUES (?, ?, ?);')
+		.bind(phoneNumber, `Manual: ${content}`, content)
+		.all();
+	return c.json({success: true, result});
+});
 
 app.post('/api/forwards', async (c) => {
 	const payload = await c.req.json();
