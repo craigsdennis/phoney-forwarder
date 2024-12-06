@@ -5,8 +5,7 @@ import { PhoneNumberUtil, PhoneNumberFormat } from 'google-libphonenumber';
 
 import OpenAI from 'openai';
 import { zodResponseFormat } from 'openai/helpers/zod';
-import { map, z } from 'zod';
-import { workersUrl } from 'twilio/lib/jwt/taskrouter/util';
+import { z } from 'zod';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -111,7 +110,7 @@ app.get('/api/forwards', async (c) => {
 });
 
 app.get('/api/mappings', async (c) => {
-	const results = await c.env.DB.prepare('SELECT * FROM mappings ORDER BY created_at').all();
+	const results = await c.env.DB.prepare('SELECT * FROM mappings ORDER BY created_at DESC').all();
 	return c.json(results);
 });
 
